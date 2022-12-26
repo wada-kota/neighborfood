@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import Supplement from './supplement';
 
 const Search = () => {
@@ -9,39 +9,57 @@ const Search = () => {
     //位置情報用state
     const [latitude, setLatitude] = useState('');
     const [longitude, setLongitude] = useState('');
+    //店舗情報用state
+    const [shop, setShop] = useState('');
 
     const getPosition = () => {
-        navigator.geolocation.getCurrentPosition(successCallback, errorCallback);
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+            setLatitude(position.coords.latitude);
+            setLongitude(position.coords.longitude);
+          },
+          function(error) {
+            alert("位置情報が取得できませんでした");
+          }
+        );
     }
-    
-    function successCallback(position){
-        setLatitude(position.coords.latitude);
-        setLongitude(position.coords.longitude);
-    };
 
-    function errorCallback(error){
-        alert("位置情報が取得できませんでした");
-    };
-
-    //飲食店情報の取得（CORSエラー発生中）
-    useEffect(() => {
-        console.log(latitude);
-        console.log(longitude);
-        fetch(`https://webservice.recruit.co.jp/hotpepper/gourmet/v1/?key=${key}&lat=${latitude}&lng=${longitude}&range=3&order=4&format=json`)
+    //CORSエラーはプロキシサーバーを経由することで解消
+    const getShop = async () => {
+        await fetch(`https://mighty-woodland-18130.herokuapp.com/https://webservice.recruit.co.jp/hotpepper/gourmet/v1/?key=${key}&lat=${latitude}&lng=${longitude}&range=3&order=4&format=json`)
         .then(response => {
             return response.json()
         })
         .then(data => {
-            console.log(data)
+            setShop(data)
         })
          .catch(error => {
-             console.error(error)
+            console.log(error)
          })
-         }, [latitude, longitude]);
+         };
+
+        //  useEffect(() => {
+        //     fetch(`https://mighty-woodland-18130.herokuapp.com/https://webservice.recruit.co.jp/hotpepper/gourmet/v1/?key=${key}&lat=${latitude}&lng=${longitude}&range=3&order=4&format=json`)
+        //     .then(response => {
+        //         return response.json()
+        //     })
+        //     .then(data => {
+        //         setShop(data)
+        //     })
+        //      .catch(error => {
+        //          console.error(error)
+        //      })
+        //      }, [latitude, longitude]);
+
+    const onClick = async () => {
+        getPosition();
+        await getShop();
+        console.log(shop);
+    };
 
     return(
         <div className='searchWrap'>
-             <button className='searchButton' onClick={getPosition}>近くのグルメを探す</button>
+             <button className='searchButton' onClick={onClick}>近くのグルメを探す</button>
              <Supplement />
         </div>
     )
